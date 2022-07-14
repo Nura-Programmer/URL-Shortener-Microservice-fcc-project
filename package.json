@@ -1,0 +1,27 @@
+{
+  "name": "URL-Shortener-Microservice-fcc-project",
+  "version": "1.0.0",
+  "description": "This is a project to meet the Backend development and API certification at freeCodeCamp",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "keywords": [
+    "url",
+    "shortener",
+    "microservice"
+  ],
+  "author": "Nura Programmer",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "express-validator": "^6.14.2",
+    "mongodb": "^4.7.0",
+    "mongoose": "^6.4.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
