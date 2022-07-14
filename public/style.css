@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Changa:wght@500&display=swap');
+
+:root {
+  font-size: 100%;
+  background: hsl(0, 100%, 90%);
+  --white: hsl(0, 0%, 90%);
+  --black: hsl(0, 0%, 10%);
+  --primary: hsl(200, 80%, 10%);
+  --secondary: hsl(200, 80%, 20%);
+  --container-bg: hsl(0, 100%, 80%);
+}
+
+.flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.f-column {
+  flex-direction: column;
+}
+
+body {
+  font-size: 1.4em;
+  font-family: 'Changa', sans-serif;
+  line-height: 1.4;
+  color: var(--black);
+  text-align: center;
+}
+
+a {
+  display: block;
+  margin-bottom: 0.5em;
+  text-decoration: none;
+  color: var(--primary);
+}
+
+a:hover {
+  color: var(--secondary);
+}
+
+.container {
+  background: var(--container-bg);
+  margin-top: 1em;
+  padding: 1em;
+  border-radius: 0.4em;
+}
+
+h2 {
+  margin: 0 0 0.5em 0;;
+  font-size: 1em;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+form label {
+  font-size: 1rem;
+  margin-right: 0.5rem;
+}
+
+form input {
+    height: 2em;
+  font-size: 1rem;
+}
+
+form input[type="submit"] {
+  border: none;
+  height: 2.3rem;
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--white);
+}  
+
+form input[type="submit"]:hover {
+  background: var(--secondary);
+}
+
+#author {
+  font-size: 0.8em;
+  background: none;
+  margin: 0;
+}

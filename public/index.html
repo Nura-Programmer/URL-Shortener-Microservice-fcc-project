@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCC Project | URL Shortener Microservice</title>
+  <link rel="stylesheet" href="style.css">
+  <base href="https://URL-Shortener-Microservice-fcc-project.nura-programmer.repl.co">
+</head>
+<body class="flex f-column">
+  <h1>URL Shortener Microservice</h1>
+  <div class="container">
+    <h2>Short URL Creation</h2>
+    <form action="/api/shorturl" method="post" class="flex">
+      <label for="original_url">Enter URL</label>
+      <input type="url" name="original_url" placeholder="https://www.freecodecamp.org">
+      <input type="submit" value="POST URL" class="flex">
+    </form>
+  </div>
+  <div class="container" id="example-input">
+    <h2>Example Usage</h2>
+    <a href="/api/shorturl/3" target="_blank">[project_url]/api/shorturl/3</a>
+    <h3>Will Redirect To:</h3>
+    <code>https://forum.freecodecamp.org</code>
+  </div>
+  <div class="container" id="author">
+    Design and Coded By: <a href="https://www.freecodecamp.org/nuraprogrammer">Nura Programmer</a>
+  </div>
+</body>
+</html>
