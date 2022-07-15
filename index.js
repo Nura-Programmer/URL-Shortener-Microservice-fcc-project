@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const MONGO_URI = process.env['MONGO_URI'];
+const { body, validationResult } = require('express-validator');
 
 // Connect to DB
 mongoose
@@ -38,7 +39,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
 app.use(cors({ optionsSuccessStatus: 200 }));
- 
+
 app.use((req, res, next) => {
   const { method, path, ip } = req;
   const logDetails = `${method} ${path} - ${ip}`;
@@ -77,6 +78,75 @@ app.get('/api/shorturl/:short_url?', (req, res) => {
     });
 });
 
+app.post(
+  '/api/shorturl',
+  body('original_url')
+    .notEmpty()
+    .withMessage('Empty URL')
+    .isURL()
+    .withMessage('Invalid URL')
+    .trim(),
+  (req, res) => {
+    const errors = validationResult(req);
+    const { original_url } = req.body;
+
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors });
+
+    Urls.find({})
+      .then((urls) => {
+        const splitRegEx = /[/.]/;
+        const len = urls.length;
+
+        const urlExist = urls.find((url) => {
+          const oldUrlArr = url.original_url.split(splitRegEx);
+          const newUrlArr = original_url.split(splitRegEx);
+          const oldUrlLen = oldUrlArr.length;
+          const newUrlLen = newUrlArr.length;
+
+          if (
+            oldUrlArr[oldUrlLen - 3] === newUrlArr[newUrlLen - 3] &&
+            oldUrlArr[oldUrlLen - 2] === newUrlArr[newUrlLen - 2]
+          )
+            return true;
+
+          return false;
+        });
+
+        if (urlExist)
+          return res.send(
+            `Short Url: ${urlExist.short_url}, Original Url: ${urlExist.original_url}`
+          );
+
+        const urlObj = {
+          original_url,
+          short_url: len + 1,
+          createdAt: new Date().toDateString(),
+          submitedBy: {
+            ipAddress: req.ip,
+            client: req.get('User-Agent'),
+          },
+        };
+
+        new Urls(urlObj)
+          .save()
+          .then((url) => {
+            console.log('created: ', url);
+
+            res.send(
+              `Created Successfully: Short Url: ${url.short_url}, Original Url: ${url.original_url}`
+            );
+          })
+          .catch((err) => {
+            console.error(err);
+            res.status(500).json({ error: err });
+          });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({ error: err });
+      });
+  }
+);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
