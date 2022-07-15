@@ -80,26 +80,26 @@ app.get('/api/shorturl/:short_url?', (req, res) => {
 
 app.post(
   '/api/shorturl',
-  body('original_url')
+  body('url')
     .notEmpty()
-    .withMessage('Empty URL')
+    .withMessage('invalid url')
     .isURL()
-    .withMessage('Invalid URL')
+    .withMessage('invalid url')
     .trim(),
   (req, res) => {
     const errors = validationResult(req);
-    const { original_url } = req.body;
+    const { url } = req.body;
 
     if (!errors.isEmpty()) return res.status(400).json({ error: errors });
 
     Urls.find({})
-      .then((urls) => {
+      .then((_urls) => {
         const splitRegEx = /[/.]/;
-        const len = urls.length;
+        const len = _urls.length;
 
-        const urlExist = urls.find((url) => {
-          const oldUrlArr = url.original_url.split(splitRegEx);
-          const newUrlArr = original_url.split(splitRegEx);
+        const urlExist = _urls.find((_url) => {
+          const oldUrlArr = _url.original_url.split(splitRegEx);
+          const newUrlArr = url.split(splitRegEx);
           const oldUrlLen = oldUrlArr.length;
           const newUrlLen = newUrlArr.length;
 
@@ -119,7 +119,7 @@ app.post(
           });
 
         const urlObj = {
-          original_url,
+          original_url: _url,
           short_url: len + 1,
           createdAt: new Date().toDateString(),
           submitedBy: {
@@ -130,12 +130,12 @@ app.post(
 
         new Urls(urlObj)
           .save()
-          .then((url) => {
-            console.log('created: ', url);
+          .then((_url) => {
+            console.log('created: ', _url);
 
             res.json({
-              original_url: url.original_url,
-              short_url: url.short_url,
+              original_url: _url.original_url,
+              short_url: _url.short_url,
             });
           })
           .catch((err) => {
