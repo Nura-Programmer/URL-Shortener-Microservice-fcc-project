@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const MONGO_URI = process.env['MONGO_URI'];
-const { body, validationResult } = require('express-validator');
+
 
 // Connect to DB
 mongoose
@@ -78,77 +78,70 @@ app.get('/api/shorturl/:short_url?', (req, res) => {
     });
 });
 
-app.post(
-  '/api/shorturl',
-  body('url')
-    .notEmpty()
-    .withMessage('invalid url')
-    .isURL()
-    .withMessage('invalid url')
-    .trim(),
-  (req, res) => {
-    const errors = validationResult(req);
-    const { url } = req.body;
+app.post('/api/shorturl', (req, res) => {
+  const { url } = req.body;
 
-    if (!errors.isEmpty()) return res.status(400).json({ error: errors });
+  const isUrl =
+    /(http(s)?:\/\/.)?((www\.)|([-a-zA-Z0-9@:%._\+~#=]\.))?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi;
 
-    Urls.find({})
-      .then((_urls) => {
-        const splitRegEx = /[/.]/;
-        const len = _urls.length;
+  if (!url.match(isUrl)) return res.status(400).json({ error: 'invalid url' });
 
-        const urlExist = _urls.find((_url) => {
-          const oldUrlArr = _url.original_url.split(splitRegEx);
-          const newUrlArr = url.split(splitRegEx);
-          const oldUrlLen = oldUrlArr.length;
-          const newUrlLen = newUrlArr.length;
+  Urls.find({})
+    .then((_urls) => {
+      const splitRegEx = /[/.]/;
+      const len = _urls.length;
 
-          if (
-            oldUrlArr[oldUrlLen - 3] === newUrlArr[newUrlLen - 3] &&
-            oldUrlArr[oldUrlLen - 2] === newUrlArr[newUrlLen - 2]
-          )
-            return true;
+      const urlExist = _urls.find((_url) => {
+        const oldUrlArr = _url.original_url.split(splitRegEx);
+        const newUrlArr = url.split(splitRegEx);
+        const oldUrlLen = oldUrlArr.length;
+        const newUrlLen = newUrlArr.length;
 
-          return false;
+        if (
+          oldUrlArr[oldUrlLen - 3] === newUrlArr[newUrlLen - 3] &&
+          oldUrlArr[oldUrlLen - 2] === newUrlArr[newUrlLen - 2]
+        )
+          return true;
+
+        return false;
+      });
+
+      if (urlExist)
+        return res.json({
+          original_url: urlExist.original_url,
+          short_url: urlExist.short_url,
         });
 
-        if (urlExist)
-          return res.json({
-            original_url: urlExist.original_url,
-            short_url: urlExist.short_url,
+      const urlObj = {
+        original_url: url,
+        short_url: len + 1,
+        createdAt: new Date().toDateString(),
+        submitedBy: {
+          ipAddress: req.ip,
+          client: req.get('User-Agent'),
+        },
+      };
+
+      new Urls(urlObj)
+        .save()
+        .then((_url) => {
+          console.log('created: ', _url);
+
+          res.json({
+            original_url: _url.original_url,
+            short_url: _url.short_url,
           });
-
-        const urlObj = {
-          original_url: url,
-          short_url: len + 1,
-          createdAt: new Date().toDateString(),
-          submitedBy: {
-            ipAddress: req.ip,
-            client: req.get('User-Agent'),
-          },
-        };
-
-        new Urls(urlObj)
-          .save()
-          .then((_url) => {
-            console.log('created: ', _url);
-
-            res.json({
-              original_url: _url.original_url,
-              short_url: _url.short_url,
-            });
-          })
-          .catch((err) => {
-            console.error(err);
-            res.status(500).json({ error: err });
-          });
-      })
-      .catch((err) => {
-        console.error(err);
-        res.status(500).json({ error: err });
-      });
-  }
-);
+        })
+        .catch((err) => {
+          console.error(err);
+          res.status(500).json({ error: err });
+        });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ error: err });
+    });
+});
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
