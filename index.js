@@ -119,7 +119,7 @@ app.post(
           });
 
         const urlObj = {
-          original_url: _url,
+          original_url: url,
           short_url: len + 1,
           createdAt: new Date().toDateString(),
           submitedBy: {
