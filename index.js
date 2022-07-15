@@ -113,9 +113,10 @@ app.post(
         });
 
         if (urlExist)
-          return res.send(
-            `Short Url: ${urlExist.short_url}, Original Url: ${urlExist.original_url}`
-          );
+          return res.json({
+            original_url: urlExist.original_url,
+            short_url: urlExist.short_url,
+          });
 
         const urlObj = {
           original_url,
@@ -132,9 +133,10 @@ app.post(
           .then((url) => {
             console.log('created: ', url);
 
-            res.send(
-              `Created Successfully: Short Url: ${url.short_url}, Original Url: ${url.original_url}`
-            );
+            res.json({
+              original_url: url.original_url,
+              short_url: url.short_url,
+            });
           })
           .catch((err) => {
             console.error(err);
