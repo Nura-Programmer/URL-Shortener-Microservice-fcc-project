@@ -1,3 +1,4 @@
+const dns = require('dns');
 const cors = require('cors');
 const express = require('express');
 const app = express();
@@ -22,6 +23,10 @@ const UrlsSchema = new mongoose.Schema({
     type: Number,
     reuired: true,
     unique: true,
+  },
+  dns: {
+    address: String,
+    family: Number,
   },
   createdAt: Date,
   submitedBy: {
@@ -63,7 +68,7 @@ app.get('/api/shorturl/:short_url?', (req, res) => {
         return res.status(400).json({ error: 'Out of range' });
 
       let redirectUrl = urls.find(
-        (url) => url.short_url == short_url
+        (url) => url.short_url === short_url
       ).original_url;
 
       console.log(
@@ -80,42 +85,48 @@ app.get('/api/shorturl/:short_url?', (req, res) => {
 
 app.post('/api/shorturl', (req, res) => {
   const { url } = req.body;
+  const protocolRegEx = /((http)|(ftp))(s)?:\/\//;
+  const host = url
+    .replace(protocolRegEx, '')
+    .split('/')
+    .find((p) => p.indexOf('.') > 2);
 
-  const isUrl =
-    /(http(s)?:\/\/.)?((www\.)|([-a-zA-Z0-9@:%._\+~#=]\.))?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi;
-
-  if (!url.match(isUrl)) return res.status(400).json({ error: 'invalid url' });
+  dns.lookup(host, (err, address, family) => {
+    if (err) {
+      console.log('invalid url', err);
+      return res.status(400).json({ error: 'invalid url' });
+    }
 
   Urls.find({})
     .then((_urls) => {
-      const splitRegEx = /[/.]/;
       const len = _urls.length;
 
       const urlExist = _urls.find((_url) => {
-        const oldUrlArr = _url.original_url.split(splitRegEx);
-        const newUrlArr = url.split(splitRegEx);
-        const oldUrlLen = oldUrlArr.length;
-        const newUrlLen = newUrlArr.length;
-
-        if (
-          oldUrlArr[oldUrlLen - 3] === newUrlArr[newUrlLen - 3] &&
-          oldUrlArr[oldUrlLen - 2] === newUrlArr[newUrlLen - 2]
-        )
-          return true;
+          if (_url.dns.address === address) return true;
 
         return false;
       });
 
-      if (urlExist)
+        if (urlExist) {
+          console.log('already exist: ', {
+            original_url: urlExist.original_url,
+            short_url: urlExist.short_url,
+          });
+
         return res.json({
           original_url: urlExist.original_url,
           short_url: urlExist.short_url,
         });
+        }
 
       const urlObj = {
         original_url: url,
         short_url: len + 1,
         createdAt: new Date().toDateString(),
+          dns: {
+            address,
+            family,
+          },
         submitedBy: {
           ipAddress: req.ip,
           client: req.get('User-Agent'),
@@ -141,6 +152,7 @@ app.post('/api/shorturl', (req, res) => {
       console.error(err);
       res.status(500).json({ error: err });
     });
+  });
 });
 
 app.use((req, res) => {
