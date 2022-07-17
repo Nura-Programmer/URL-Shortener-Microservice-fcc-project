@@ -15,12 +15,12 @@ const UrlsSchema = new mongoose.Schema({
   original_url: {
     type: String,
     required: true,
-    unique: true,
+    // unique: true,
   },
   short_url: {
     type: Number,
     reuired: true,
-    unique: true,
+    // unique: true,
   },
   dns: {
     address: String,
@@ -77,25 +77,22 @@ app.get('/api/shorturl/:short_url?', (req, res) => {
   const short_url = parseInt(req.params.short_url);
 
   Urls.find({})
-    .then((urls) => {
-      const len = urls.length;
+    .then((_urls) => {
+      // const len = _urls.length;
 
-      if (short_url < 1 || short_url > len)
-        return res.status(400).json({ error: 'Out of range' });
+      const redirectUrl = _urls.find((_url) => _url.short_url === short_url);
 
-      let redirectUrl = urls.find(
-        (url) => url.short_url === short_url
-      ).original_url;
+      if (redirectUrl === undefined) return res.json({ error: 'invalid url' });
 
       console.log(
-        `Using Short Url: ${short_url}, Redirecting to: ${redirectUrl}`
+        `Using Short Url: ${short_url}, Redirecting to: ${redirectUrl.original_url}`
       );
 
-      res.redirect(redirectUrl);
+      res.redirect(redirectUrl.original_url);
     })
     .catch((err) => {
       console.error(err);
-      res.status(500).json({ error: err });
+      res.json({ error: err });
     });
 });
 
@@ -110,18 +107,25 @@ app.post('/api/shorturl', (req, res) => {
   dns.lookup(host, (err, address, family) => {
     if (err) {
       console.log('invalid url', err);
-      return res.status(400).json({ error: 'invalid url' });
+      return res.json({ error: 'invalid url' });
     }
 
-  Urls.find({})
-    .then((_urls) => {
-      const len = _urls.length;
+    Urls.find({})
+      .then((_urls) => {
+        const len = _urls.length;
 
-      const urlExist = _urls.find((_url) => {
-          if (_url.dns.address === address) return true;
+        const urlExist = _urls.find((_url) => {
+          const _splitUrl = _url.original_url.split('/');
+          const splitUrl = url.split('/');
 
-        return false;
-      });
+          if (
+            _url.dns.address === address &&
+            _splitUrl[_splitUrl.length - 1] === splitUrl[splitUrl.length - 1]
+          )
+            return true;
+
+          return false;
+        });
 
         if (urlExist) {
           console.log('already exist: ', {
@@ -129,45 +133,45 @@ app.post('/api/shorturl', (req, res) => {
             short_url: urlExist.short_url,
           });
 
-        return res.json({
-          original_url: urlExist.original_url,
-          short_url: urlExist.short_url,
-        });
+          return res.json({
+            original_url: urlExist.original_url,
+            short_url: urlExist.short_url,
+          });
         }
 
-      const urlObj = {
-        original_url: url,
-        short_url: len + 1,
-        createdAt: new Date().toDateString(),
+        const urlObj = {
+          original_url: url,
+          short_url: len + 1,
+          createdAt: new Date().toDateString(),
           dns: {
             address,
             family,
           },
-        submitedBy: {
-          ipAddress: req.ip,
-          client: req.get('User-Agent'),
-        },
-      };
+          submitedBy: {
+            ipAddress: req.ip,
+            client: req.get('User-Agent'),
+          },
+        };
 
-      new Urls(urlObj)
-        .save()
-        .then((_url) => {
-          console.log('created: ', _url);
+        new Urls(urlObj)
+          .save()
+          .then((_url) => {
+            console.log('created: ', _url);
 
-          res.json({
-            original_url: _url.original_url,
-            short_url: _url.short_url,
+            res.json({
+              original_url: _url.original_url,
+              short_url: _url.short_url,
+            });
+          })
+          .catch((err) => {
+            console.error(err);
+            res.json({ error: err });
           });
-        })
-        .catch((err) => {
-          console.error(err);
-          res.status(500).json({ error: err });
-        });
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).json({ error: err });
-    });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.json({ error: err });
+      });
   });
 });
 
