@@ -1,10 +1,8 @@
 const dns = require('dns');
-const cors = require('cors');
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const MONGO_URI = process.env['MONGO_URI'];
-
 
 // Connect to DB
 mongoose
@@ -40,10 +38,28 @@ const Urls = mongoose.model('Urls', UrlsSchema);
 // Express
 const PORT = process.env.PORT || 3000;
 
+if (!process.env['DISABLE_XORIGIN']) {
+  app.use(function (req, res, next) {
+    var allowedOrigins = [
+      'https://narrow-plane.gomix.me',
+      'https://www.freecodecamp.com',
+    ];
+    var origin = req.headers.origin || '*';
+    if (!process.env.XORIG_RESTRICT || allowedOrigins.indexOf(origin) > -1) {
+      // console.log(origin);
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.header(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept'
+      );
+    }
+    next();
+  });
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
-app.use(cors({ optionsSuccessStatus: 200 }));
 
 app.use((req, res, next) => {
   const { method, path, ip } = req;
